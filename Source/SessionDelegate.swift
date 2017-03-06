@@ -44,7 +44,21 @@ open class SessionDelegate: NSObject {
     // MARK: URLSessionTaskDelegate Overrides
 
     /// Overrides default behavior for URLSessionTaskDelegate method `urlSession(_:task:willPerformHTTPRedirection:newRequest:completionHandler:)`.
-    open var taskWillPerformHTTPRedirection: ((URLSession, URLSessionTask, HTTPURLResponse, URLRequest) -> URLRequest?)?
+    open var taskWillPerformHTTPRedirection: ((URLSession, URLSessionTask, HTTPURLResponse, URLRequest) -> URLRequest?)? = { session, task, response, request in
+        var redirectedRequest = request
+        
+        if
+            let originalRequest = task.originalRequest,
+            let headers = originalRequest.allHTTPHeaderFields,
+            let authorizationHeaderValue = headers["Authorization"]
+        {
+            var mutableRequest = request
+            mutableRequest.setValue(authorizationHeaderValue, forHTTPHeaderField: "Authorization")
+            redirectedRequest = mutableRequest
+        }
+        
+        return redirectedRequest
+    }
 
     /// Overrides all behavior for URLSessionTaskDelegate method `urlSession(_:task:willPerformHTTPRedirection:newRequest:completionHandler:)` and
     /// requires the caller to call the `completionHandler`.
